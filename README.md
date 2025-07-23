@@ -2,7 +2,7 @@
 # StoreStation
 <img height="360" alt="logo" src="https://github.com/user-attachments/assets/b7d3deee-d808-475e-aa1d-30ee113b01ef" />
 
-## What is it
+## What is this
 
 StoreStation is an **Homebrew** store for the PSP (currently supporting only plugins) compatible with ARK4 <br>
 Uses [RegularRabbit05/ServerStation](https://github.com/RegularRabbit05/ServerStation) as server and is currently available at [http://storestation.projects.regdev.me/](https://storestation.projects.regdev.me/) <br>

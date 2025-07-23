@@ -9,7 +9,8 @@ Uses [RegularRabbit05/ServerStation](https://github.com/RegularRabbit05/ServerSt
 <br>
 _Remember to enable WPA2 support in ARK's menu to use with modern WiFi APs._ <br>
 <br>
-![showcase](https://github.com/user-attachments/assets/ccf25030-1d77-4016-a385-48761a959cd0)
+![showcase](https://github.com/user-attachments/assets/ccf25030-1d77-4016-a385-48761a959cd0) <br>
+[_click me to view as a video_](https://i.imgur.com/R48H7fS.mp4)
 
 ---
 

@@ -1,0 +1,19 @@
+{
+    "pkgver": 1,
+    "type": "app",
+
+    "name": "StoreStation",
+    "author": "RegularRabbit05",
+    "description": "Homebrew store for the PSP",
+    "tag": "app",
+    "link": "https://github.com/StoreStation",
+    "image": "githubusercontent:StoreStation/previews/refs/heads/main/storestationpreview.jpg",
+    "version": "1.0",
+    "download": {
+        "remote": "github:StoreStation/StoreStation/releases/latest/download/EBOOT.PBP",
+        "compressed": false,
+        "targets": [
+            { "file": "EBOOT.PBP", "target": "ms0:/PSP/GAME/StoreStation/EBOOT.PBP" }
+        ]
+    }
+}

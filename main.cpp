@@ -36,6 +36,7 @@ PSP_MAIN_THREAD_STACK_SIZE_KB(1024);
 #include "include/views/update.cpp"
 #include "include/views/apps.cpp"
 #include "include/views/plugins.cpp"
+#include "include/views/featured.cpp"
 
 int main(int argc, char *argv[]) {
     sceKernelSetCompiledSdkVersion(0x06060010);

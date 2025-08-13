@@ -46,63 +46,97 @@ bool storeinspect_install(StoreInspectState *storeInspectState) {
     if (!storeInspectState->installable) return false;
     storeInspectState->installable = false;
     StoreInspect_Item * item = &storeInspectState->item;
-    if (!item->isCompressed) {
-        TraceLog(LOG_WARNING, "Unimplemented");
-        return false;
-    }
     if (item->download[0] == 0) return false;
     const char* ext = GetFileExtension(item->download);
     char archiveName[strlen(ext)+8+strlen("download")];
-    char urlBuf[strlen(item->download)+strlen("/proxy/")+16];
-    strcpy(urlBuf, "/proxy/");
-    strcat(urlBuf, item->download);
-    strcpy(archiveName, "download");
-    strcat(archiveName, ext);
-    net_Response archive = net_get(urlBuf, net_timeouts(30));
-    if (archive.code != 200 || archive.size <= 0) goto err;
-    TraceLog(LOG_INFO, "Mounting installer (%d) from %s to %s", archive.size, archiveName, mountPoint);
-    if (PHYSFS_mountMemory(archive.buffer, archive.size, nullptr, archiveName, mountPoint, 0) == 0) {
-        TraceLog(LOG_ERROR, "Failed to mount installer");
-        goto err;
-    }
+    if (item->isCompressed) {
+        char urlBuf[strlen(item->download)+strlen("/proxy/")+16];
+        strcpy(urlBuf, "/proxy/");
+        strcat(urlBuf, item->download);
+        strcpy(archiveName, "download");
+        strcat(archiveName, ext);
+        FILE * dl = fopen(archiveName, "wb");
+        if (dl == nullptr) {
+            TraceLog(LOG_ERROR, "Failed to download archive");
+            goto err;
+        }
+        net_SimpleResponse archive = net_download(urlBuf, dl, net_timeouts(30));
+        fclose(dl);
+        if (archive.code != 200 || archive.size <= 0) goto err;
+        TraceLog(LOG_INFO, "Mounting installer (%d) from %s to %s", archive.size, archiveName, mountPoint);
+        if (PHYSFS_mount(archiveName, mountPoint, 0) == 0) {
+            TraceLog(LOG_ERROR, "Failed to mount installer");
+            remove(archiveName);
+            goto err;
+        }
 
-    char tmp[512];
-    char copyBuffer[1024];
-    for (uint32_t i = 0; i < item->targetsCount; i++) {
-        tmp[0] = 0;
-        sceKernelDelayThreadCB(1);
-        StoreInspect_Install *target = &item->targets[i];
-        if (target->file[0] == 0 || target->install[0] == 0) continue;
-        char* fileNamePtr = strrchr(target->install, '/');
+        char tmp[512];
+        char copyBuffer[1024];
+        for (uint32_t i = 0; i < item->targetsCount; i++) {
+            tmp[0] = 0;
+            sceKernelDelayThreadCB(1);
+            StoreInspect_Install *target = &item->targets[i];
+            if (target->file[0] == 0 || target->install[0] == 0) continue;
+            char* fileNamePtr = strrchr(target->install, '/');
+            if (fileNamePtr != nullptr) {
+                *fileNamePtr = 0;
+                mkdir_recursive(target->install, 0777);
+                *fileNamePtr = '/';
+            }
+            snprintf(tmp, 512, "%s%s", mountPoint, target->file);
+            TraceLog(LOG_INFO, "] Copying %s", tmp);
+            PHYSFS_File * f = PHYSFS_openRead(tmp);
+            if (f == nullptr) {
+                TraceLog(LOG_ERROR, "Failed to open file %s", tmp);
+                continue;
+            }
+            FILE * t = fopen(target->install, "wb");
+            if (t == nullptr) {
+                PHYSFS_close(f);
+                TraceLog(LOG_ERROR, "Failed to create file %s", target->install);
+                continue;
+            }
+            int bytes_read;
+            while ((bytes_read = PHYSFS_readBytes(f, copyBuffer, 1024)) > 0) {
+                int bytes_written = fwrite(copyBuffer, 1, bytes_read, t);
+                if (bytes_written != bytes_read) {
+                    TraceLog(LOG_ERROR, "Write error for file %s", tmp);
+                    break;
+                }
+            }
+            fclose(t);
+            PHYSFS_close(f);
+        }
+    } else {
+        if (item->targetsCount != 1 || item->targets[0].install[0] == 0) {
+            TraceLog(LOG_ERROR, "Too many or too few targets available Limit: 1, Found: %d", item->targetsCount);
+            return false;
+        }
+        char* fileNamePtr = strrchr(item->targets[0].install, '/');
         if (fileNamePtr != nullptr) {
             *fileNamePtr = 0;
-            mkdir_recursive(target->install, 0777);
+            mkdir_recursive(item->targets[0].install, 0777);
             *fileNamePtr = '/';
         }
-        snprintf(tmp, 512, "%s%s", mountPoint, target->file);
-        TraceLog(LOG_INFO, "] Copying %s", tmp);
-        PHYSFS_File * f = PHYSFS_openRead(tmp);
-        if (f == nullptr) {
-            TraceLog(LOG_ERROR, "Failed to open file %s", tmp);
-            continue;
+        FILE * res = fopen(item->targets[0].install, "wb");
+        if (res == nullptr) {
+            TraceLog(LOG_ERROR, "Failed to create file %s", item->targets[0].install);
+            return false;
         }
-        FILE * t = fopen(target->install, "wb");
-        if (t == nullptr) {
-            PHYSFS_close(f);
-            TraceLog(LOG_ERROR, "Failed to create file %s", target->install);
-            continue;
+        char urlBuf[strlen(item->download)+strlen("/proxy/")+16];
+        strcpy(urlBuf, "/proxy/");
+        strcat(urlBuf, item->download);
+        strcpy(archiveName, "download");
+        strcat(archiveName, ext);
+        net_SimpleResponse resp = net_download(urlBuf, res, net_timeouts(30));
+        if (resp.code != 200) {
+            TraceLog(LOG_ERROR, "Failed to download file %s", item->download);
+            fclose(res);
+            return false;
         }
-        int bytes_read;
-        while ((bytes_read = PHYSFS_readBytes(f, copyBuffer, 1024)) > 0) {
-            int bytes_written = fwrite(copyBuffer, 1, bytes_read, t);
-            if (bytes_written != bytes_read) {
-                TraceLog(LOG_ERROR, "Write error for file %s", tmp);
-                break;
-            }
-        }
-        fclose(t);
-        PHYSFS_close(f);
+        fclose(res);
     }
+    
     sceKernelDelayThreadCB(1);
     if (!storeInspectState->skipRegister && item->registersCount > 0) {
         mkdir("ms0:/SEPLUGINS/", 0777);
@@ -119,11 +153,12 @@ bool storeinspect_install(StoreInspectState *storeInspectState) {
     }
     donew:
     
-    PHYSFS_unmount(archiveName);
-    net_closeget(&archive);
+    if (item->isCompressed) {
+        PHYSFS_unmount(archiveName);
+        remove(archiveName);
+    }
     return true;
     err:
-    net_closeget(&archive);
     return false;
 }
 

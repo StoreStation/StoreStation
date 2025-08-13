@@ -1,5 +1,7 @@
 #pragma once
 
+#include <pspdisplay.h>
+
 typedef struct {
     Model plugins;
     Model apps;
@@ -16,10 +18,11 @@ typedef struct {
     TopbarState topbarState;
     ButtonsState buttonsState;
     net_SimpleResponse motd;
+    Texture frameBufferSave;
 } HomeState;
 
 const char* home_options[] = {
-    "Unavailable",
+    "Apps",
     "Plugins",
     "Update",
 };
@@ -35,6 +38,7 @@ void home_init(AppState *appState) {
     homeState->transitionState = -1000;
     homeState->introTransitionState = 0;
     homeState->selectedItem = 1;
+    homeState->frameBufferSave.id = 0;
     homeState->plugins = LoadModel("/eboot/assets/plugins.glb");
     homeState->apps = LoadModel("/eboot/assets/apps.glb");
     homeState->update = LoadModel("/eboot/assets/update.glb");
@@ -56,6 +60,7 @@ void home_destroy(AppState *appState) {
     UnloadModelFull(homeState->plugins);
     UnloadModelFull(homeState->apps);
     UnloadModelFull(homeState->update);
+    if (homeState->frameBufferSave.id != 0) UnloadTexture(homeState->frameBufferSave);
     free(homeState);
 }
 
@@ -117,17 +122,17 @@ int home_handle(AppState *appState) {
             homeState->transitionState+=GetFrameTime()*1500;
             if (homeState->transitionState >= ATTR_PSP_WIDTH*1.25f) {
                 switch (homeState->selectedItem) {
-                case 0: {
-                    rVal = RETURN_STATE_APPS;
-                } break;
-                case 1: {
-                    rVal = RETURN_STATE_PLUGINS;
-                } break;
-                case 2: {
-                    rVal = RETURN_STATE_UPDATE;
-                } break;
-                default: break;
-            }
+                    case 0: {
+                        rVal = RETURN_STATE_APPS;
+                    } break;
+                    case 1: {
+                        rVal = RETURN_STATE_PLUGINS;
+                    } break;
+                    case 2: {
+                        rVal = RETURN_STATE_UPDATE;
+                    } break;
+                    default: break;
+                }
             }
         } else {
             homeState->transitionState-=GetFrameTime()*1500;
@@ -151,7 +156,7 @@ int home_handle(AppState *appState) {
         CAMERA_PERSPECTIVE,
     });
     constexpr float fl = 0;
-    DrawModelEx(homeState->apps, {5, homeState->selectedItem != 0 ? fl : fl+home_hover(homeState->hover), 0}, {0, 1, 0}, homeState->selectedItem != 0 ? 180 : 180+home_rotation(homeState->rot), {1, 1, 1}, {255, 255, 255, 90});
+    DrawModelEx(homeState->apps, {5, homeState->selectedItem != 0 ? fl : fl+home_hover(homeState->hover), 0}, {0, 1, 0}, homeState->selectedItem != 0 ? 180 : 180+home_rotation(homeState->rot), {1, 1, 1}, {255, 255, 255, 220});
     DrawModelEx(homeState->plugins, {0, homeState->selectedItem != 1 ? fl : fl+home_hover(homeState->hover), 0}, {0, 1, 0}, homeState->selectedItem != 1 ? 0 : home_rotation(homeState->rot), {1, 1, 1}, {255, 255, 255, 220});
     DrawModelEx(homeState->update, {-5, homeState->selectedItem != 2 ? fl : fl+home_hover(homeState->hover), 0}, {0, 1, 0}, homeState->selectedItem != 2 ? 0 : home_rotation(homeState->rot), {1, 1, 1}, {255, 255, 255, 220});
     EndMode3D();
@@ -177,6 +182,7 @@ int home_handle(AppState *appState) {
         DrawRectangle(ATTR_PSP_WIDTH - homeState->transitionState, 0, homeState->transitionState+8, ATTR_PSP_HEIGHT, GRAY);
     }
 
+    if (homeState->frameBufferSave.id != 0) DrawTexture(homeState->frameBufferSave, 0, 0, WHITE);
     topbar_draw(&homeState->topbarState);
     if (homeState->introTransitionState > 0) DrawCircleV({ATTR_PSP_WIDTH/2, ATTR_PSP_HEIGHT/2}, homeState->introTransitionState, BLACK);
     return rVal;

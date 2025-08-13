@@ -2,7 +2,7 @@ BUILD_PRX = 1
 TARGET = Application
 OBJS = main.o
 INCDIR =
-CFLAGS = -Wall -o3 -DDEBUG=false -DATTR_VERSION_STR=\"1.0\"
+CFLAGS = -Wall -o3 -DDEBUG=false -DATTR_VERSION_STR=\"1.1\"
 CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti
 ASFLAGS = $(CFLAGS)
 

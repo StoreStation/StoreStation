@@ -100,6 +100,47 @@ net_Response net_get(const char* endpoint, int timeout = 10 * 1000000) {
     return resp;
 }
 
+net_SimpleResponse net_download(const char* endpoint, FILE * w, int timeout = 10 * 1000000) {
+    char endpointBuffer[256];
+    snprintf(endpointBuffer, 255, "%s%s", net_baseurl, endpoint);
+    int tmpl = sceHttpCreateTemplate(net_useragent, PSP_HTTP_VERSION_1_1, 1);
+    if (tmpl < 0) TraceLog(LOG_ERROR, "Template < 0");
+    sceHttpSetConnectTimeOut(tmpl, timeout);
+    int conn = sceHttpCreateConnectionWithURL(tmpl, endpointBuffer, 0);
+    if (conn < 0) TraceLog(LOG_ERROR, "Connection < 0");
+    int res, req = sceHttpCreateRequestWithURL(conn, PSP_HTTP_METHOD_GET, endpointBuffer, 0);
+    if (req < 0) TraceLog(LOG_ERROR, "Request < 0");
+    res = sceHttpSendRequest(req, nullptr, 0);
+    if (res < 0) TraceLog(LOG_ERROR, "sceHttpSendRequest error %x", res);
+    net_SimpleResponse resp;
+    memset(&resp, 0, sizeof(resp));
+    uint64_t total_size;
+    int total_read = 0;
+    res = sceHttpGetStatusCode(req, &resp.code);
+    if (res < 0) TraceLog(LOG_ERROR, "sceHttpGetStatusCode error %x", res);
+    res = sceHttpGetContentLength(req, &total_size);
+    if (res < 0) {
+        TraceLog(LOG_ERROR, "sceHttpGetContentLength error %x", res);
+        resp.code = -1;
+        goto err;
+    }
+    TraceLog(LOG_INFO, "HTTP[%d] (%d): %s", resp.code, (int) total_size, endpointBuffer);
+    fseek(w, 0, SEEK_SET);
+    while (1) {
+        sceKernelDelayThreadCB(1);
+        int read = sceHttpReadData(req, resp.buffer, sizeof(resp.buffer));
+        if (read <= 0) break;
+        fwrite(resp.buffer, 1, read, w);
+        total_read += read;
+    }
+    resp.size = total_read;
+    err:
+    sceHttpDeleteRequest(req);
+    sceHttpDeleteConnection(conn);
+    sceHttpDeleteTemplate(tmpl);
+    return resp;
+}
+
 void net_closeget(net_Response *resp) {
     if (resp->buffer != nullptr) free(resp->buffer);
     resp->buffer = nullptr;

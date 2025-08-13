@@ -84,6 +84,14 @@ int apps_handle(AppState * appState) {
     DrawRectangle(0, 0, ATTR_PSP_WIDTH, ATTR_PSP_HEIGHT, GRAY);
 
     if (appsState->storeInspectState != nullptr) {
+        if (appsState->storeInspectState->installing) {
+            if (storeinspect_install(appsState->storeInspectState)) {
+                appsState->storeInspectState->completed = true;
+            } else {
+                appsState->storeInspectState->failed = true;
+            }
+        }
+
         if (appState->controller.o) {
             if (!appsState->wasPressing) {
                 apps_noinspect(appState);
@@ -96,11 +104,7 @@ int apps_handle(AppState * appState) {
         } else if (appState->controller.start) {
             if (!appsState->wasPressing) {
                 if (appsState->storeInspectState->installable) {
-                    if (storeinspect_install(appsState->storeInspectState)) {
-                        appsState->storeInspectState->completed = true;
-                    } else {
-                        appsState->storeInspectState->failed = true;
-                    }
+                    appsState->storeInspectState->installing = true;
                 }
             }
             appsState->wasPressing = true;

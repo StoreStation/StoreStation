@@ -83,6 +83,14 @@ int plugins_handle(AppState * appState) {
     DrawRectangle(0, 0, ATTR_PSP_WIDTH, ATTR_PSP_HEIGHT, GRAY);
 
     if (pluginsState->storeInspectState != nullptr) {
+        if (pluginsState->storeInspectState->installing) {
+            if (storeinspect_install(pluginsState->storeInspectState)) {
+                pluginsState->storeInspectState->completed = true;
+            } else {
+                pluginsState->storeInspectState->failed = true;
+            }
+        }
+
         if (appState->controller.o) {
             if (!pluginsState->wasPressing) {
                 plugins_noinspect(appState);
@@ -95,11 +103,7 @@ int plugins_handle(AppState * appState) {
         } else if (appState->controller.start) {
             if (!pluginsState->wasPressing) {
                 if (pluginsState->storeInspectState->installable) {
-                    if (storeinspect_install(pluginsState->storeInspectState)) {
-                        pluginsState->storeInspectState->completed = true;
-                    } else {
-                        pluginsState->storeInspectState->failed = true;
-                    }
+                    pluginsState->storeInspectState->installing = true;
                 }
             }
             pluginsState->wasPressing = true;

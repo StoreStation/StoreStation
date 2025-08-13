@@ -35,11 +35,12 @@ typedef struct {
 typedef struct {
     StoreInspect_Item item;
     AppState *appState;
-    bool ok, installable, completed, failed, skipRegister;
+    bool ok, installable, completed, failed, skipRegister, installing;
     float buttonAnimation;
 } StoreInspectState;
 
 bool storeinspect_install(StoreInspectState *storeInspectState) {
+    storeInspectState->installing = false;
     const char* mountPoint = "/installer/";
 
     if (storeInspectState == nullptr) return false;
@@ -303,13 +304,17 @@ void storeinspect_draw(StoreInspectState *storeInspectState) {
         DrawTextEx(storeInspectState->appState->font, install, {txs, 48+STORE_PREV_H*1.75f-16-10}, 20, 0, WHITE);
     }
 
-    if (storeInspectState->completed || storeInspectState->failed) {
+    if (storeInspectState->completed || storeInspectState->failed || storeInspectState->installing) {
         DrawRectangle(ATTR_PSP_WIDTH/4, ATTR_PSP_HEIGHT/2-ATTR_PSP_HEIGHT/8, ATTR_PSP_WIDTH/2, ATTR_PSP_HEIGHT/4, DARKGRAY);
-        char* msg = (char*) "Install successful";
-        Color color = GREEN;
+        const char* msg = "Installing, please wait";
+        Color color = ORANGE;
+        if (storeInspectState->completed) {
+            color = GREEN;
+            msg = "Install successful";
+        }
         if (storeInspectState->failed) {
             color = RED;
-            msg = (char*) "Install failed";
+            msg = "Install failed";
         }
         const float tx = MeasureTextEx(storeInspectState->appState->font, msg, 30, 0).x;
         DrawTextEx(storeInspectState->appState->font, msg, {ATTR_PSP_WIDTH/2-tx/2, ATTR_PSP_HEIGHT/2-15}, 30, 0, color);

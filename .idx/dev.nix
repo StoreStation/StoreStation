@@ -24,6 +24,7 @@
     pkgs.openssl
     pkgs.curl
     pkgs.zip
+    pkgs.ffmpeg-full
   ];
   env = {};
   idx = {

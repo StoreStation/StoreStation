@@ -1,6 +1,6 @@
 #pragma once
 
-#define STORELIST_ITEM_SIZE 60
+#define STORELIST_ITEM_SIZE 64
 
 typedef struct {
     char name[128];
@@ -8,6 +8,7 @@ typedef struct {
     char description[512];
     char id[128];
     uint64_t uploaded;
+    Texture icon;
 } StoreItem;
 
 typedef struct {
@@ -65,12 +66,14 @@ void storelist_init(StorelistState *storelistState, AppState *appState, char* ca
             strncpy(storelistState->storeItemsList[i].id, currentKey->valuestring, 128);
             currentKey = cJSON_GetObjectItemCaseSensitive(item, "uploaded");
             storelistState->storeItemsList[i].uploaded = (uint64_t) currentKey->valuedouble;
+            currentKey = cJSON_GetObjectItemCaseSensitive(item, "icon");
+            if (currentKey != nullptr) storelistState->storeItemsList[i].icon = fetch_texture_link(currentKey->valuestring, 64, 64);
 
             TraceLog(LOG_INFO, "] %s", storelistState->storeItemsList[i].name);
         }
         
         cJSON_Delete(json);
-        TraceLog(LOG_INFO, "%d %d %d %d", storelistState->page, storelistState->itemCount, storelistState->totalCount, storelistState->pageSize);
+        TraceLog(LOG_INFO, "StoreList %d %d %d %d", storelistState->page, storelistState->itemCount, storelistState->totalCount, storelistState->pageSize);
     } else {
         err: 
         storelistState->page = -1;
@@ -81,6 +84,7 @@ void storelist_init(StorelistState *storelistState, AppState *appState, char* ca
 
 void storelist_destroy(StorelistState *storelistState) {
     if (storelistState->storeItemsList != nullptr) {
+        for (int i = 0; i < storelistState->itemCount; i++) if (storelistState->storeItemsList[i].icon.id != 0) UnloadTexture(storelistState->storeItemsList[i].icon);
         free(storelistState->storeItemsList);
     }
 }
@@ -128,7 +132,6 @@ bool storelist_draw(StorelistState *storelistState) {
             if (storelistState->transitionStatus >= 0) storelistState->transitionStatus = 0;
         }
     }
-    
 
     DrawRectangle(0, 0, ATTR_PSP_WIDTH, ATTR_PSP_HEIGHT, MAGENTA);
     constexpr int size = STORELIST_ITEM_SIZE;
@@ -136,15 +139,17 @@ bool storelist_draw(StorelistState *storelistState) {
     for (; i < storelistState->itemCount; i++) {
         StoreItem * item = &storelistState->storeItemsList[i];
         float baseY = i*size + 48 - storelistState->selectedItem*size + storelistState->transitionStatus;
+        const float xOffs = (item->icon.id != 0 ? STORELIST_ITEM_SIZE : 0) + 5;
         const Color blockColor = (i+1) % 2 ? GRAY : DARKGRAY;
         constexpr int addAmt = 50;
         const Color blendColor = {(uint8_t) (blockColor.r + addAmt), (uint8_t) (blockColor.g + addAmt), (uint8_t) (blockColor.b + addAmt), 255};
         DrawRectangleGradientH(0, baseY, ATTR_PSP_WIDTH, size, i == storelistState->selectedItem ? ColorLerp(blockColor, blendColor, pspFpuAbs(storelistState->blend)) : blockColor, blockColor);
+        if (item->icon.id != 0) DrawTexture(item->icon, 0, baseY, WHITE);
         baseY+=2;
         const float titlex = MeasureTextEx(storelistState->appState->font, item->name, 20, 0).x;
-        DrawTextEx(storelistState->appState->font, TextFormat("%s ", item->name), {5, (float) baseY}, 20, 0, WHITE);
-        DrawTextEx(storelistState->appState->font, TextFormat(" by %s", item->author), {5 + titlex + 2, (float) baseY + 3}, 15, 0, WHITE);
-        DrawTextEx(storelistState->appState->font, item->description, {5, (float) (baseY+18)}, 18, 0, WHITE);
+        DrawTextEx(storelistState->appState->font, TextFormat("%s ", item->name), {xOffs, (float) baseY}, 20, 0, WHITE);
+        DrawTextEx(storelistState->appState->font, TextFormat(" by %s", item->author), {xOffs + titlex + 2, (float) baseY + 3}, 15, 0, WHITE);
+        DrawTextEx(storelistState->appState->font, item->description, {xOffs, (float) (baseY+18)}, 18, 0, WHITE);
     }
     char pgFormat[64];
     snprintf(pgFormat, 64, "Page: %d/%d", storelistState->page+1, storelistState->pageCount);

@@ -243,7 +243,7 @@ Texture fetch_texture_link(char* link, int maxW = STORE_PREV_W, int maxH = STORE
     Image tmp;
 
     snprintf(urlBuf, 399, "/proxy/%s", link);
-    net_Response resp = net_get(urlBuf);
+    net_Response resp = net_get(urlBuf, net_timeouts(2));
     if (resp.code != 200) goto err;
     if (resp.size == 0) goto closeerr;
     if (resp.size < 2 || memcmp(resp.buffer, "\xFF\xD8", 2) != 0) {
@@ -251,8 +251,12 @@ Texture fetch_texture_link(char* link, int maxW = STORE_PREV_W, int maxH = STORE
         goto closeerr;
     }
     jpeg_size((uint8_t*) resp.buffer, resp.size, &w, &h);
-    if ((maxW != -1 && (w != maxW || h != maxH)) || (maxW == -1 && (w <= 0 || h <= 0))) goto closeerr;
+    if ((maxW != -1 && (w != maxW || h != maxH)) || (maxW == -1 && (w <= 0 || h <= 0))) {
+        TraceLog(LOG_ERROR, "Jpeg has incorrect size");
+        goto closeerr;
+    }
     if (sceJpegCreateMJpeg(w, h) != 0) {
+        TraceLog(LOG_ERROR, "Unable to instance jpeg decoder");
         goto closeerr;
     }
     c = 4;

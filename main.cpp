@@ -26,17 +26,17 @@ PSP_MAIN_THREAD_STACK_SIZE_KB(1024);
 #include "include/mp3.h"
 #include "include/waves.h"
 
-#include "include/views/widgets/topbar.cpp"
-#include "include/views/widgets/storelist.cpp"
-#include "include/views/widgets/storeinspect.cpp"
-#include "include/views/widgets/buttons.cpp"
+#include "include/views/widgets/topbar.h"
+#include "include/views/widgets/storelist.h"
+#include "include/views/widgets/storeinspect.h"
+#include "include/views/widgets/buttons.h"
 
-#include "include/views/connect.cpp"
-#include "include/views/home.cpp"
-#include "include/views/update.cpp"
-#include "include/views/apps.cpp"
-#include "include/views/plugins.cpp"
-#include "include/views/featured.cpp"
+#include "include/views/connect.h"
+#include "include/views/home.h"
+#include "include/views/update.h"
+#include "include/views/apps.h"
+#include "include/views/plugins.h"
+#include "include/views/featured.h"
 
 int main(int argc, char *argv[]) {
     sceKernelSetCompiledSdkVersion(0x06060010);

@@ -4,7 +4,7 @@
 
 ## What is this
 
-StoreStation is an **Homebrew** store for the PSP (currently supporting only plugins) compatible with ARK4 <br>
+StoreStation is an **Homebrew** store for the PSP compatible with ARK4 <br>
 Uses [RegularRabbit05/ServerStation](https://github.com/RegularRabbit05/ServerStation) as server and is currently available at [http://storestation.projects.regdev.me/](https://storestation.projects.regdev.me/) <br>
 <br>
 _Remember to enable WPA2 support in ARK's menu to use with modern WiFi APs._ <br>
@@ -16,9 +16,9 @@ _Remember to enable WPA2 support in ARK's menu to use with modern WiFi APs._ <br
 
 <br>
 
-## If you are a developer and would like to submit your plugin:
-1. Add a `storepkg.json` file to your repository (or create a new repository that only contains the storepkg file, for example if the code is not on GitHub) following [this template](https://github.com/StoreStation/templatePluginPkg/blob/main/storepkg.json)
-2. Fork and submit a pull request to [this repository](https://github.com/StoreStation/StoreData) adding your plugin to plugins.json with the current timestamp **IN SECONDS**
+## If you are a developer and would like to submit your plugin/app:
+1. Add a `storepkg.json` file to your repository (or create a new repository that only contains the storepkg file, for example if the code is not on GitHub) following [this template](https://github.com/StoreStation/templatePluginPkg/blob/main/storepkg.json) (while for apps check out this repository's storepkg.json as a reference)
+2. Fork and submit a pull request to [this repository](https://github.com/StoreStation/StoreData) adding your plugin to plugins.json or app to apps.json with the current timestamp **IN SECONDS**
 3. Due to how GitHub's CDN works it might take up to 5 minutes for any change to reflect
 
 ## Themes

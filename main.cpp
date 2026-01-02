@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     pspFpuSetEnable(0);
     scePowerSetClockFrequency(333, 333, 166);
     AppState appState = {.isRunning = 1, .onArk = onArk(), .start = {argc, argv}, .bgm = nullptr, .isRemoteAssetLoaded = false, .remoteAssets = {.buffer = nullptr}};
-    SetupCallbacks(&appState);
+    load_libraries(&appState);
     PHYSFS_init(argv[0]);
     MountEmbedded(argv[0]);
     if (file_exists((char*) EXTERNAL_ARCHIVE)) PHYSFS_mount(EXTERNAL_ARCHIVE, "/eboot/assets", 0);
@@ -97,6 +97,7 @@ int main(int argc, char *argv[]) {
             TraceLog(LOG_INFO, copy);
             appState.bgm = mp3_beginPlayback(copy);
         }
+        if (WindowShouldClose()) appState.isRunning = false;
     }
 
     connect_destroy(&appState, true);

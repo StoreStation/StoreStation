@@ -64,20 +64,7 @@ void ExitApp(AppState &appState) {
     sceKernelExitGame();
 }
 
-int exit_callback(int arg1, int arg2, void* common) {
-    ((AppState *) common)->isRunning = false;
-    sceKernelSleepThreadCB();
-	return 0;
-}
-
-int CallbackThread(SceSize args, void* argp) {
-	int cbid = sceKernelCreateCallback("Exit Callback", exit_callback, argp);
-	sceKernelRegisterExitCallback(cbid);
-	sceKernelSleepThreadCB();
-	return 0;
-}
-
-int SetupCallbacks(AppState * appState) {
+void load_libraries(AppState * appState) {
     sceCtrlSetSamplingCycle(0);
 	sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
     pspAudioInit();
@@ -90,12 +77,9 @@ int SetupCallbacks(AppState * appState) {
     sceUtilityLoadModule(PSP_MODULE_AV_AVCODEC);
     sceUtilityLoadModule(PSP_MODULE_AV_MP3);
     sceJpegInitMJpeg();
-	int thid = sceKernelCreateThread("update_thread", CallbackThread, 0x18, 0xFA0, 0, 0);
-	if (thid >= 0) sceKernelStartThread(thid, sizeof(AppState), appState);
     sceNetInit(128*1024, 42, 4*1024, 42, 4*1024);
 	sceNetInetInit();
 	sceNetApctlInit(0x8000, 48);
-	return thid;
 }
 
 #define STATE_NONE                  (-1)

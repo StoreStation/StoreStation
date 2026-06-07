@@ -120,7 +120,13 @@ int apps_handle(AppState * appState) {
                 }
             }
             appsState->wasPressing = true;
-        } else appsState->wasPressing = false;
+        } else if (appState->controller.s) {
+            appsState->storeInspectState->showqr = true;
+            appsState->wasPressing = true;
+        } else {
+            appsState->wasPressing = false;
+            appsState->storeInspectState->showqr = false;
+        }
     } else {
         if (appState->controller.o) {
             if (!appsState->wasPressing) {

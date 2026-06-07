@@ -102,6 +102,8 @@ net_Response net_get(const char* endpoint, int timeout = 10 * 1000000) {
 
 net_SimpleResponse net_download(const char* endpoint, FILE * w, int timeout = 10 * 1000000) {
     char endpointBuffer[256];
+    constexpr int netbufSize = 1024 * 1024;
+    void * netbuf = malloc(netbufSize);
     snprintf(endpointBuffer, 255, "%s%s", net_baseurl, endpoint);
     int tmpl = sceHttpCreateTemplate(net_useragent, PSP_HTTP_VERSION_1_1, 1);
     if (tmpl < 0) TraceLog(LOG_ERROR, "Template < 0");
@@ -114,6 +116,7 @@ net_SimpleResponse net_download(const char* endpoint, FILE * w, int timeout = 10
     if (res < 0) TraceLog(LOG_ERROR, "sceHttpSendRequest error %x", res);
     net_SimpleResponse resp;
     memset(&resp, 0, sizeof(resp));
+    memset(netbuf, 0, netbufSize);
     uint64_t total_size;
     int total_read = 0;
     res = sceHttpGetStatusCode(req, &resp.code);
@@ -128,9 +131,9 @@ net_SimpleResponse net_download(const char* endpoint, FILE * w, int timeout = 10
     fseek(w, 0, SEEK_SET);
     while (1) {
         sceKernelDelayThreadCB(1);
-        int read = sceHttpReadData(req, resp.buffer, sizeof(resp.buffer));
+        int read = sceHttpReadData(req, netbuf, netbufSize);
         if (read <= 0) break;
-        fwrite(resp.buffer, 1, read, w);
+        fwrite(netbuf, 1, read, w);
         total_read += read;
     }
     resp.size = total_read;
@@ -138,6 +141,7 @@ net_SimpleResponse net_download(const char* endpoint, FILE * w, int timeout = 10
     sceHttpDeleteRequest(req);
     sceHttpDeleteConnection(conn);
     sceHttpDeleteTemplate(tmpl);
+    free(netbuf);
     return resp;
 }
 

@@ -119,7 +119,13 @@ int plugins_handle(AppState * appState) {
                 }
             }
             pluginsState->wasPressing = true;
-        } else pluginsState->wasPressing = false;
+        } else if (appState->controller.s) {
+            pluginsState->storeInspectState->showqr = true;
+            pluginsState->wasPressing = true;
+        } else {
+            pluginsState->wasPressing = false;
+            pluginsState->storeInspectState->showqr = false;
+        }
     } else {
         if (appState->controller.o) {
             if (!pluginsState->wasPressing) {

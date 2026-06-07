@@ -22,12 +22,13 @@ typedef struct {
     char link[256];
     char download[512];
 
-    bool isCompressed;
+    bool isCompressed, hasqr;
     StoreInspect_Install *targets;
     uint32_t targetsCount;
     StoreInspect_Register *registers;
     uint32_t registersCount;
     char mountFrom[64];
+    uint8_t qrcode[qrcodegen_BUFFER_LEN_MAX];
     net_Response bytes;
     Texture image;
 } StoreInspect_Item;
@@ -35,7 +36,7 @@ typedef struct {
 typedef struct {
     StoreInspect_Item item;
     AppState *appState;
-    bool ok, installable, completed, failed, skipRegister, installing;
+    bool ok, installable, completed, failed, skipRegister, installing, showqr;
     float buttonAnimation;
 } StoreInspectState;
 
@@ -192,7 +193,14 @@ void storeinspect_init(StoreInspectState *storeInspectState, AppState * appState
         item = cJSON_GetObjectItemCaseSensitive(json, "version");
         if (item != nullptr) strncpy(storeInspectState->item.version, item->valuestring, sizeof(storeInspectState->item.version)-1);
         item = cJSON_GetObjectItemCaseSensitive(json, "link");
-        if (item != nullptr) strncpy(storeInspectState->item.link, item->valuestring, sizeof(storeInspectState->item.link)-1);
+        if (item != nullptr) {
+            strncpy(storeInspectState->item.link, item->valuestring, sizeof(storeInspectState->item.link)-1);
+            if (storeInspectState->item.link[0] != 0) {
+                uint8_t tempBuffer[qrcodegen_BUFFER_LEN_MAX];
+                storeInspectState->item.hasqr = qrcodegen_encodeText(storeInspectState->item.link, tempBuffer, storeInspectState->item.qrcode, qrcodegen_Ecc_LOW,
+                    qrcodegen_VERSION_MIN, qrcodegen_VERSION_MAX, qrcodegen_Mask_AUTO, true);
+            }
+        }
         downloads = cJSON_GetObjectItemCaseSensitive(json, "download");
         if (downloads != nullptr) {
             item = cJSON_GetObjectItemCaseSensitive(downloads, "remote");
@@ -318,5 +326,24 @@ void storeinspect_draw(StoreInspectState *storeInspectState) {
         }
         const float tx = MeasureTextEx(storeInspectState->appState->font, msg, 30, 0).x;
         DrawTextEx(storeInspectState->appState->font, msg, {ATTR_PSP_WIDTH/2-tx/2, ATTR_PSP_HEIGHT/2-15}, 30, 0, color);
+    } else if (storeInspectState->showqr) {
+        if (storeInspectState->item.hasqr) {
+            DrawRectangle(ATTR_PSP_WIDTH/4, ATTR_PSP_HEIGHT/4, ATTR_PSP_WIDTH/2, ATTR_PSP_HEIGHT/2, DARKGRAY);
+            const int size = qrcodegen_getSize(storeInspectState->item.qrcode);
+            constexpr int border = 4;
+            constexpr int scale = 3;
+            const int totalModules = size + (border * 2);
+            const int qrPixelSize = totalModules * scale;                    
+            const int startX = (ATTR_PSP_WIDTH/2 - qrPixelSize) / 2;
+            const int startY = (ATTR_PSP_HEIGHT/2 - qrPixelSize) / 2;
+            for (int y = -border; y < size + border; y++) {
+                for (int x = -border; x < size + border; x++) {
+                    const int drawX = startX + ((x + border) * scale) + ATTR_PSP_WIDTH/4;
+                    const int drawY = startY + ((y + border) * scale) + ATTR_PSP_HEIGHT/4;
+                    DrawRectangle(drawX, drawY, scale, 
+                        scale, qrcodegen_getModule(storeInspectState->item.qrcode, x, y) ? BLACK : WHITE);
+                }
+            }
+        }
     }
 }

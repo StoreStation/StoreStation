@@ -9,9 +9,9 @@ constexpr int ATTR_PSP_HEIGHT = 272;
 #undef ATTR_VERSION_STR
 #define ATTR_VERSION_STR "DEV"
 #endif
-PSP_MODULE_INFO("StoreStation", 0, 1, 0);
+PSP_MODULE_INFO("StoreStation", 0, 1, 3);
 PSP_MAIN_THREAD_ATTR(PSP_THREAD_ATTR_USER | THREAD_ATTR_VFPU);
-PSP_HEAP_SIZE_KB(18*1024);
+PSP_HEAP_SIZE_KB(16*1024);
 PSP_MAIN_THREAD_STACK_SIZE_KB(1024);
 
 #include <raylib.h>
@@ -19,6 +19,7 @@ PSP_MAIN_THREAD_STACK_SIZE_KB(1024);
 #include <malloc.h>
 #include <cjson/cJSON.h>
 
+#include "include/qr.h"
 #include "include/control.h"
 #include "include/net.h"
 #include "include/state.h"

@@ -1,0 +1,38 @@
+name: PSP Build
+
+on:
+  push:
+    tags:
+      - '*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    container:
+      image: pspdev/pspdev:latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v6
+
+    - name: Install dependencies
+      run: apk add --no-cache zip
+
+    - name: Build repository
+      run: make
+
+    - name: Get current date
+      id: get_date
+      run: echo "date=$(date +'%B %d, %Y')" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v3
+      with:
+        tag_name: ${{ github.ref_name }}
+        name: Release ${{ github.ref_name }} - ${{ steps.get_date.outputs.date }}
+        files: |
+          EBOOT.PBP

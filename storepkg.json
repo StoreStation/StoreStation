@@ -8,7 +8,7 @@
     "tag": "app",
     "link": "https://github.com/StoreStation",
     "image": "githubusercontent:StoreStation/previews/refs/heads/main/storestationpreview.jpg",
-    "version": "1.2",
+    "version": "1.3",
     "download": {
         "remote": "github:StoreStation/StoreStation/releases/latest/download/EBOOT.PBP",
         "compressed": false,
